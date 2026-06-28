@@ -139,7 +139,7 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm napi prepublish -t npm
-          pnpm install
+          pnpm install --no-frozen-lockfile
       - name: List packages
         run: ls -R .
         shell: bash
@@ -194,7 +194,7 @@ jobs:
           jq '.pnpm.supportedArchitectures = {"cpu": ["current","arm64","x64","arm"], "libc": ["current","musl","gnu"]}' package.json > package.json.tmp
           mv package.json.tmp package.json
           pnpm napi prepublish -t npm
-          pnpm install
+          pnpm install --no-frozen-lockfile
       - name: List packages
         run: ls -R .
         shell: bash
