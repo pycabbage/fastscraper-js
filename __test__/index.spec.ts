@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 
-import { plus100 } from "../index"
+import { plus100 } from ".."
 
 test("sync function from native code", () => {
   const fixture = 42
