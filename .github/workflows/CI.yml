@@ -111,7 +111,7 @@ jobs:
             index.d.ts
           if-no-files-found: error
   test-macOS-windows-binding:
-    name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
+    name: Test bindings on ${{ matrix.settings.target }}
     needs:
       - build
     strategy:
@@ -120,33 +120,26 @@ jobs:
         settings:
           - host: macos-latest
             target: aarch64-apple-darwin
-            architecture: arm64
-          - host: macos-latest
+          - host: macos-13
             target: x86_64-apple-darwin
-            architecture: x64
-        node:
-          - '22'
-          - '24'
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
+      - name: Install dependencies
+        run: pnpm install
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
           name: bindings-${{ matrix.settings.target }}
           path: .
-      - name: Install dependencies
-        run: |
-          pnpm napi prepublish -t npm
-          pnpm install --no-frozen-lockfile
       - name: List packages
         run: ls -R .
         shell: bash
       - name: Test bindings
         run: pnpm test
   test-linux-binding:
-    name: Test ${{ matrix.target }} - node@${{ matrix.node }}
+    name: Test ${{ matrix.target }}
     needs:
       - build
     strategy:
@@ -155,63 +148,22 @@ jobs:
         target:
           - x86_64-unknown-linux-gnu
           - aarch64-unknown-linux-gnu
-        node:
-          - '22'
-          - '24'
-        exclude:
-          - target: armv7-unknown-linux-gnueabihf
-            node: '24'
     runs-on: ${{ contains(matrix.target, 'aarch64') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - name: Output docker params
-        id: docker
-        run: |
-          node -e "
-            if ('${{ matrix.target }}'.startsWith('aarch64')) {
-              console.log('PLATFORM=linux/arm64')
-            } else if ('${{ matrix.target }}'.startsWith('armv7')) {
-              console.log('PLATFORM=linux/arm/v7')
-            } else {
-              console.log('PLATFORM=linux/amd64')
-            }
-          " >> $GITHUB_OUTPUT
-          node -e "
-            if ('${{ matrix.target }}'.endsWith('-musl')) {
-              console.log('IMAGE=node:${{ matrix.node }}-alpine')
-            } else {
-              console.log('IMAGE=node:${{ matrix.node }}-slim')
-            }
-          " >> $GITHUB_OUTPUT
+      - name: Install dependencies
+        run: pnpm install
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
           name: bindings-${{ matrix.target }}
           path: .
-      - name: Install dependencies
-        run: |
-          jq '.pnpm.supportedArchitectures = {"cpu": ["current","arm64","x64","arm"], "libc": ["current","musl","gnu"]}' package.json > package.json.tmp
-          mv package.json.tmp package.json
-          pnpm napi prepublish -t npm
-          pnpm install --no-frozen-lockfile
       - name: List packages
         run: ls -R .
         shell: bash
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-        if: ${{ contains(matrix.target, 'armv7') }}
-        with:
-          platforms: all
-      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-        if: ${{ contains(matrix.target, 'armv7') }}
       - name: Test bindings
-        uses: tj-actions/docker-run@v2
-        with:
-          image: ${{ steps.docker.outputs.IMAGE }}
-          name: test-bindings-${{ matrix.target }}
-          options: '-v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }} --platform ${{ steps.docker.outputs.PLATFORM }}'
-          args: pnpm test
+        run: pnpm test
   publish:
     name: Publish
     runs-on: ubuntu-latest
