@@ -182,8 +182,8 @@ jobs:
           " >> $GITHUB_OUTPUT
       - name: Install dependencies
         run: |
-          pnpm config set --json supportedArchitectures.cpu '["current", "arm64", "x64", "arm"]'
-          pnpm config set --json supportedArchitectures.libc '["current", "musl", "gnu"]'
+          jq '.pnpm.supportedArchitectures = {"cpu": ["current","arm64","x64","arm"], "libc": ["current","musl","gnu"]}' package.json > package.json.tmp
+          mv package.json.tmp package.json
           pnpm install
       - name: Download artifacts
         uses: actions/download-artifact@v8

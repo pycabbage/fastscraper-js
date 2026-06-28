@@ -1,9 +1,10 @@
 
 [package]
-authors = ["LongYinan <lynweklm@gmail.com>"]
-edition = "2021"
-name    = "fastscraper_js"
-version = "0.1.0"
+authors    = ["Cabbage Lettuce <33714346+pycabbage@users.noreply.github.com>"]
+edition    = "2021"
+name       = "fastscraper_js"
+repository = "https://github.com/pycabbage/fastscraper-js/"
+version    = "0.1.0"
 
 [lib]
 crate-type = ["cdylib"]

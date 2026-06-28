@@ -6,7 +6,12 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/napi-rs/package-template.git"
+    "url": "git+ssh://git@github.com/pycabbage/fastscraper-js.git"
+  },
+  "author": {
+    "name": "Cabbage Lettuce",
+    "email": "33714346+pycabbage@users.noreply.github.com",
+    "url": "https://github.com/pycabbage/"
   },
   "license": "MIT",
   "keywords": [
