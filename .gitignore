@@ -117,3 +117,6 @@ Cargo.lock
 *.node
 .pnp.*
 /npm
+
+index.js
+index.d.ts
