@@ -131,13 +131,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - name: Install dependencies
-        run: pnpm install
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
           name: bindings-${{ matrix.settings.target }}
           path: .
+      - name: Install dependencies
+        run: pnpm install
       - name: List packages
         run: ls -R .
         shell: bash
@@ -182,16 +182,16 @@ jobs:
               console.log('IMAGE=node:${{ matrix.node }}-slim')
             }
           " >> $GITHUB_OUTPUT
-      - name: Install dependencies
-        run: |
-          jq '.pnpm.supportedArchitectures = {"cpu": ["current","arm64","x64","arm"], "libc": ["current","musl","gnu"]}' package.json > package.json.tmp
-          mv package.json.tmp package.json
-          pnpm install
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
           name: bindings-${{ matrix.target }}
           path: .
+      - name: Install dependencies
+        run: |
+          jq '.pnpm.supportedArchitectures = {"cpu": ["current","arm64","x64","arm"], "libc": ["current","musl","gnu"]}' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          pnpm install
       - name: List packages
         run: ls -R .
         shell: bash
