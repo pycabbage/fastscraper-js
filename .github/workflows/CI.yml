@@ -47,13 +47,13 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - host: macos-latest
+          - host: macos-26
             target: x86_64-apple-darwin
             build: pnpm build --target x86_64-apple-darwin
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             build: pnpm build --target x86_64-unknown-linux-gnu --use-napi-cross
-          - host: macos-latest
+          - host: macos-26
             target: aarch64-apple-darwin
             build: pnpm build --target aarch64-apple-darwin
           - host: ubuntu-latest
@@ -118,9 +118,9 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - host: macos-latest
+          - host: macos-26
             target: aarch64-apple-darwin
-          - host: macos-13
+          - host: macos-26-intel
             target: x86_64-apple-darwin
     runs-on: ${{ matrix.settings.host }}
     steps:
