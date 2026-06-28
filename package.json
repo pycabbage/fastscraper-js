@@ -72,11 +72,5 @@
     "typescript": "^6.0.0",
     "vitest": "^4.1.9"
   },
-  "optionalDependencies": {
-    "fastscraper-js-darwin-x64": "1.0.0",
-    "fastscraper-js-linux-x64-gnu": "1.0.0",
-    "fastscraper-js-linux-arm64-gnu": "1.0.0",
-    "fastscraper-js-darwin-arm64": "1.0.0"
-  },
   "packageManager": "pnpm@11.9.0"
 }
