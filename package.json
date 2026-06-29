@@ -3,6 +3,13 @@
   "version": "0.0.0",
   "description": "Fast HTML parser with CSS selector API, powered by Rust",
   "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "browser": "./browser.js",
+      "default": "./index.js"
+    }
+  },
   "type": "module",
   "repository": {
     "type": "git",
@@ -24,7 +31,8 @@
   ],
   "files": [
     "index.d.ts",
-    "index.js"
+    "index.js",
+    "browser.js"
   ],
   "napi": {
     "binaryName": "fastscraper-js",

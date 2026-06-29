@@ -170,8 +170,9 @@ jobs:
         run: ls -R .
         shell: bash
       - name: Test bindings
-        
         run: pnpm test
+        env:
+          NAPI_RS_FORCE_WASI: ${{ contains(matrix.settings.target, 'wasm') && 'true' || 'false' }}
   publish:
     name: Publish
     runs-on: ubuntu-latest

@@ -118,4 +118,8 @@ Cargo.lock
 artifacts/
 
 index.js
+browser.js
 index.d.ts
+*.wasi*.js
+*.wasi*.cjs
+wasi-worker*.mjs
