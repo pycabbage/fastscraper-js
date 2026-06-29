@@ -1,87 +1,95 @@
-# `@napi-rs/package-template`
+# fastscraper-js
 
-![https://github.com/napi-rs/package-template/actions](https://github.com/napi-rs/package-template/workflows/CI/badge.svg)
+[![CI](https://github.com/pycabbage/fastscraper-js/actions/workflows/CI.yml/badge.svg)](https://github.com/pycabbage/fastscraper-js/actions/workflows/CI.yml)
 
-> Template project for writing node packages with napi-rs.
+Fast HTML parser with CSS selector API for Node.js, powered by Rust ([scraper](https://github.com/causal-agent/scraper) crate).
 
-# Usage
-
-1. Click **Use this template**.
-2. **Clone** your project.
-3. Run `pnpm install` to install dependencies.
-4. Run `pnpm napi rename -n [@your-scope/package-name] -b [binary-name]` command under the project folder to rename your package.
-
-## Install this test package
+## Installation
 
 ```bash
-pnpm add @napi-rs/package-template
+npm install fastscraper-js
+# or
+pnpm add fastscraper-js
 ```
 
-## Ability
+## Usage
 
-### Build
+```ts
+import { parseDocument, parseFragment } from "fastscraper-js"
 
-After `pnpm build/npm run build` command, you can see `package-template.[darwin|win32|linux].node` file in project root. This is the native addon built from [lib.rs](./src/lib.rs).
+// Parse a full HTML document
+const doc = parseDocument(`
+  <html>
+    <body>
+      <h1 class="title">Hello</h1>
+      <ul>
+        <li><a href="https://example.com">Link 1</a></li>
+        <li><a href="https://example.org">Link 2</a></li>
+      </ul>
+    </body>
+  </html>
+`)
 
-### Test
+// Select all matching elements
+const links = doc.select("a")
+for (const link of links) {
+  console.log(link.attr("href")) // "https://example.com", "https://example.org"
+  console.log(link.text())       // "Link 1", "Link 2"
+}
 
-With [ava](https://github.com/avajs/ava), run `pnpm test/npm run test` to testing native addon. You can also switch to another testing framework if you want.
+// Select the first matching element
+const h1 = doc.selectFirst("h1")
+console.log(h1?.text())      // "Hello"
+console.log(h1?.tagName())   // "h1"
+console.log(h1?.hasClass("title")) // true
 
-### CI
+// Parse an HTML fragment
+const frag = parseFragment('<p class="note">Hello <strong>world</strong></p>')
+const p = frag.selectFirst("p")
+console.log(p?.innerHtml())  // "Hello <strong>world</strong>"
+console.log(p?.outerHtml())  // '<p class="note">Hello <strong>world</strong></p>'
+```
 
-With GitHub Actions, each commit and pull request will be built and tested automatically in [`node@20`, `@node22`] x [`macOS`, `Linux`, `Windows`] matrix. You will never be afraid of the native addon broken in these platforms.
+## API
 
-### Release
+### `parseDocument(html: string): HtmlDocument`
 
-Release native package is very difficult in old days. Native packages may ask developers who use it to install `build toolchain` like `gcc/llvm`, `node-gyp` or something more.
+Parses a full HTML document. The parser follows the HTML5 specification.
 
-With `GitHub actions`, we can easily prebuild a `binary` for major platforms. And with `N-API`, we should never be afraid of **ABI Compatible**.
+### `parseFragment(html: string): HtmlDocument`
 
-The other problem is how to deliver prebuild `binary` to users. Downloading it in `postinstall` script is a common way that most packages do it right now. The problem with this solution is it introduced many other packages to download binary that has not been used by `runtime codes`. The other problem is some users may not easily download the binary from `GitHub/CDN` if they are behind a private network (But in most cases, they have a private NPM mirror).
+Parses an HTML fragment.
 
-In this package, we choose a better way to solve this problem. We release different `npm packages` for different platforms. And add it to `optionalDependencies` before releasing the `Major` package to npm.
+### `HtmlDocument`
 
-`NPM` will choose which native package should download from `registry` automatically. You can see [npm](./npm) dir for details. And you can also run `pnpm add @napi-rs/package-template` to see how it works.
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `select(selector)` | `HtmlElement[]` | Returns all elements matching the CSS selector |
+| `selectFirst(selector)` | `HtmlElement \| null` | Returns the first matching element, or `null` |
 
-## Develop requirements
+### `HtmlElement`
 
-- Install the latest `Rust`
-- Install `Node.js@10+` which fully supported `Node-API`
-- Install `pnpm@11.x`
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `tagName()` | `string` | Tag name in lowercase (e.g. `"div"`) |
+| `text()` | `string` | Concatenated text content of the element and its descendants |
+| `innerHtml()` | `string` | Inner HTML of the element |
+| `outerHtml()` | `string` | Outer HTML including the element's own tag |
+| `attr(name)` | `string \| null` | Value of the named attribute, or `null` if absent |
+| `attrs()` | `Record<string, string>` | All attributes as a key-value object |
+| `hasClass(className)` | `boolean` | Whether the element has the given class |
+| `select(selector)` | `HtmlElement[]` | Selects descendants matching the CSS selector |
+| `selectFirst(selector)` | `HtmlElement \| null` | Selects the first matching descendant |
+| `children()` | `HtmlElement[]` | Direct element children (text nodes excluded) |
 
-## Test in local
+Both `select` and `selectFirst` throw if the selector is invalid.
 
-- pnpm
-- pnpm build
-- pnpm test
+## Build from source
 
-And you will see:
+Requires Rust and Node.js 18+.
 
 ```bash
-$ ava --verbose
-
-  ✔ sync function from native code
-  ✔ sleep function from native code (201ms)
-  ─
-
-  2 tests passed
-✨  Done in 1.12s.
+pnpm install
+pnpm build
+pnpm test
 ```
-
-## Release package
-
-Ensure you have set your **NPM_TOKEN** in the `GitHub` project setting.
-
-In `Settings -> Secrets`, add **NPM_TOKEN** into it.
-
-When you want to release the package:
-
-```bash
-npm version [<newversion> | major | minor | patch | premajor | preminor | prepatch | prerelease [--preid=<prerelease-id>] | from-git]
-
-git push
-```
-
-GitHub actions will do the rest job for you.
-
-> WARN: Don't run `npm publish` manually.
