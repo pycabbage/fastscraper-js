@@ -1,12 +1,13 @@
 {
   "name": "fastscraper-js",
-  "version": "0.0.0-alpha.0",
+  "version": "0.0.1-alpha.0",
   "description": "Fast HTML parser with CSS selector API, powered by Rust",
   "main": "index.js",
   "types": "index.d.ts",
   "exports": {
     ".": {
       "browser": "./browser.js",
+      "import": "./index.js",
       "default": "./index.js"
     }
   },
@@ -55,16 +56,16 @@
   },
   "scripts": {
     "artifacts": "napi artifacts",
-    "bench": "tsx benchmark/bench.ts",
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
+    "bench": "NODE_OPTIONS=--max-old-space-size=4096 tsx benchmark/bench.ts",
+    "build": "napi build --esm --platform --release",
+    "build:debug": "napi build --esm --platform",
     "format": "run-p format:rs format:toml",
     "format:toml": "taplo format",
     "format:rs": "cargo fmt",
     "lint": "biome check",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "vitest run",
-    "preversion": "napi build --platform && git add .",
+    "preversion": "napi build --esm --platform && git add .",
     "version": "napi version",
     "prepare": "husky"
   },
@@ -76,8 +77,13 @@
     "@napi-rs/wasm-runtime": "^1.1.6",
     "@taplo/cli": "^0.7.0",
     "@tybys/wasm-util": "^0.10.0",
+    "@types/jsdom": "^28.0.3",
+    "cheerio": "^1.2.0",
     "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
+    "linkedom": "^0.18.12",
     "lint-staged": "^17.0.0",
+    "node-html-parser": "^8.0.3",
     "npm-run-all2": "^9.0.0",
     "tinybench": "^6.0.0",
     "tsx": "^4.22.4",
