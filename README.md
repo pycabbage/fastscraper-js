@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/pycabbage/fastscraper-js/actions/workflows/CI.yml/badge.svg)](https://github.com/pycabbage/fastscraper-js/actions/workflows/CI.yml)
 
-Fast HTML parser with CSS selector API for Node.js, powered by Rust ([scraper](https://github.com/causal-agent/scraper) crate).
+Fast HTML parser with CSS selector API for Node.js and browsers, powered by Rust ([scraper](https://github.com/causal-agent/scraper) crate).
 
 ## Installation
 
@@ -83,6 +83,27 @@ Parses an HTML fragment.
 | `children()` | `HtmlElement[]` | Direct element children (text nodes excluded) |
 
 Both `select` and `selectFirst` throw if the selector is invalid.
+
+## WebAssembly support
+
+### Browser
+
+Bundlers (Vite, webpack, etc.) automatically select the WASM build via the `browser` condition in `package.json`. No configuration needed.
+
+```ts
+import { parseDocument } from "fastscraper-js"
+// → resolves to the WASM build automatically in browser environments
+```
+
+The WASM runtime is provided by the optional dependency `fastscraper-js-wasm32-wasi`, which is installed automatically alongside the main package.
+
+### Node.js
+
+By default, the native binary is used. To force the WASM build in Node.js:
+
+```bash
+NAPI_RS_FORCE_WASI=true node your-script.js
+```
 
 ## Build from source
 
