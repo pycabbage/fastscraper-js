@@ -116,8 +116,12 @@ jobs:
           path: |
             ${{ env.APP_NAME }}.*.node
             ${{ env.APP_NAME }}.*.wasm
+            ${{ env.APP_NAME }}.*.js
+            ${{ env.APP_NAME }}.*.cjs
+            wasi-worker*.mjs
             index.js
             index.d.ts
+            browser.js
           if-no-files-found: error
   test-binding:
     name: Test ${{ matrix.settings.target }}
