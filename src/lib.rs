@@ -1,11 +1,35 @@
 #![deny(clippy::all)]
 
+mod node_list;
+pub use node_list::NativeNodeList;
+
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use ego_tree::NodeId;
 use napi_derive::napi;
 use scraper::{ElementRef, Html, Selector};
+
+thread_local! {
+    static SELECTOR_CACHE: RefCell<HashMap<String, Arc<Selector>>> =
+        RefCell::new(HashMap::new());
+}
+
+fn get_selector(selector: &str) -> napi::Result<Arc<Selector>> {
+    SELECTOR_CACHE.with(|cache| {
+        let mut cache = cache.borrow_mut();
+        if let Some(sel) = cache.get(selector) {
+            return Ok(Arc::clone(sel));
+        }
+        let sel = Selector::parse(selector)
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        let sel = Arc::new(sel);
+        cache.insert(selector.to_string(), Arc::clone(&sel));
+        Ok(sel)
+    })
+}
 
 #[napi]
 pub fn parse_document(html: String) -> HtmlDocument {
@@ -29,24 +53,20 @@ pub struct HtmlDocument {
 #[napi]
 impl HtmlDocument {
   #[napi]
-  pub fn select(&self, selector: String) -> napi::Result<Vec<HtmlElement>> {
-    let sel = Selector::parse(&selector).map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    Ok(
-      self
-        .html
-        .select(&sel)
-        .map(|e| HtmlElement {
-          html: Rc::clone(&self.html),
-          node_id: e.id(),
-        })
-        .collect(),
-    )
+  pub fn select(&self, selector: String) -> napi::Result<NativeNodeList> {
+    let sel = get_selector(&selector)?;
+    let node_ids = self
+      .html
+      .select(&*sel)
+      .map(|e| e.id())
+      .collect();
+    Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
 
   #[napi]
   pub fn select_first(&self, selector: String) -> napi::Result<Option<HtmlElement>> {
-    let sel = Selector::parse(&selector).map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    Ok(self.html.select(&sel).next().map(|e| HtmlElement {
+    let sel = get_selector(&selector)?;
+    Ok(self.html.select(&*sel).next().map(|e| HtmlElement {
       html: Rc::clone(&self.html),
       node_id: e.id(),
     }))
@@ -60,6 +80,10 @@ pub struct HtmlElement {
 }
 
 impl HtmlElement {
+  pub(crate) fn new(html: Rc<Html>, node_id: NodeId) -> Self {
+    Self { html, node_id }
+  }
+
   fn element_ref(&self) -> napi::Result<ElementRef<'_>> {
     let node_ref = self
       .html
@@ -121,27 +145,23 @@ impl HtmlElement {
   }
 
   #[napi]
-  pub fn select(&self, selector: String) -> napi::Result<Vec<HtmlElement>> {
-    let sel = Selector::parse(&selector).map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    Ok(
-      self
-        .element_ref()?
-        .select(&sel)
-        .map(|e| HtmlElement {
-          html: Rc::clone(&self.html),
-          node_id: e.id(),
-        })
-        .collect(),
-    )
+  pub fn select(&self, selector: String) -> napi::Result<NativeNodeList> {
+    let sel = get_selector(&selector)?;
+    let node_ids = self
+      .element_ref()?
+      .select(&*sel)
+      .map(|e| e.id())
+      .collect();
+    Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
 
   #[napi]
   pub fn select_first(&self, selector: String) -> napi::Result<Option<HtmlElement>> {
-    let sel = Selector::parse(&selector).map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    let sel = get_selector(&selector)?;
     Ok(
       self
         .element_ref()?
-        .select(&sel)
+        .select(&*sel)
         .next()
         .map(|e| HtmlElement {
           html: Rc::clone(&self.html),
@@ -151,17 +171,12 @@ impl HtmlElement {
   }
 
   #[napi]
-  pub fn children(&self) -> napi::Result<Vec<HtmlElement>> {
-    Ok(
-      self
-        .element_ref()?
-        .children()
-        .filter_map(ElementRef::wrap)
-        .map(|e| HtmlElement {
-          html: Rc::clone(&self.html),
-          node_id: e.id(),
-        })
-        .collect(),
-    )
+  pub fn children(&self) -> napi::Result<NativeNodeList> {
+    let node_ids = self.element_ref()?
+      .children()
+      .filter_map(ElementRef::wrap)
+      .map(|e| e.id())
+      .collect();
+    Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
 }
