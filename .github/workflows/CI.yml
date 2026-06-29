@@ -111,10 +111,20 @@ jobs:
         shell: bash
       - name: Upload artifact
         uses: actions/upload-artifact@v7
+        if: ${{ !contains(matrix.settings.target, 'wasm') }}
         with:
           name: bindings-${{ matrix.settings.target }}
           path: |
             ${{ env.APP_NAME }}.*.node
+            index.js
+            index.d.ts
+          if-no-files-found: error
+      - name: Upload artifact (wasm)
+        uses: actions/upload-artifact@v7
+        if: ${{ contains(matrix.settings.target, 'wasm') }}
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: |
             ${{ env.APP_NAME }}.*.wasm
             ${{ env.APP_NAME }}.*.js
             ${{ env.APP_NAME }}.*.cjs
@@ -160,6 +170,7 @@ jobs:
         run: ls -R .
         shell: bash
       - name: Test bindings
+        
         run: pnpm test
   publish:
     name: Publish
@@ -183,7 +194,7 @@ jobs:
         with:
           path: artifacts
       - name: Move artifacts
-        run: pnpm artifacts
+        run: pnpm artifacts --build-output-dir artifacts/bindings-wasm32-wasip1-threads
       - name: List packages
         run: ls -R ./npm
         shell: bash

@@ -112,8 +112,10 @@ dist
 Cargo.lock
 
 *.node
+*.wasm
 .pnp.*
 /npm
+artifacts/
 
 index.js
 index.d.ts
