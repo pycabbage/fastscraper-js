@@ -6,6 +6,7 @@
   "types": "index.d.ts",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "browser": "./browser.js",
       "import": "./index.js",
       "default": "./index.js"

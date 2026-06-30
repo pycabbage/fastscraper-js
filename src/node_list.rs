@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use ego_tree::NodeId;
-use napi::bindgen_prelude::{Function, Generator};
+use napi::bindgen_prelude::Generator;
 use napi_derive::napi;
 use scraper::Html;
 
@@ -24,6 +24,7 @@ impl NativeNodeList {
   }
 }
 
+#[napi]
 impl Generator for NativeNodeList {
   type Yield = HtmlElement;
   type Next = ();
@@ -52,14 +53,5 @@ impl NativeNodeList {
     self.node_ids.get(index as usize).map(|&node_id| {
       HtmlElement::new(Rc::clone(&self.html), node_id)
     })
-  }
-
-  #[napi]
-  pub fn for_each(&self, callback: Function<HtmlElement, ()>) -> napi::Result<()> {
-    for &node_id in &self.node_ids {
-      let el = HtmlElement::new(Rc::clone(&self.html), node_id);
-      callback.call(el)?;
-    }
-    Ok(())
   }
 }
