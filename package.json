@@ -1,6 +1,6 @@
 {
   "name": "fastscraper-js",
-  "version": "0.0.1-alpha.4",
+  "version": "0.0.1-alpha.5",
   "description": "Fast HTML parser with CSS selector API, powered by Rust",
   "main": "index.js",
   "types": "index.d.ts",
@@ -64,7 +64,7 @@
     "format:toml": "taplo format",
     "format:rs": "cargo fmt",
     "lint": "biome check",
-    "prepublishOnly": "napi prepublish -t npm --no-gh-release",
+    "prepublishOnly": "napi prepublish -t npm",
     "test": "vitest run",
     "preversion": "napi build --esm --platform && git add .",
     "version": "napi version",
