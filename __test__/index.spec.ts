@@ -219,6 +219,131 @@ describe("HtmlElement.selectFirst (nested)", () => {
   })
 })
 
+const whitespaceHtml = `<div>
+  <p>  Hello   World  </p>
+  <span>
+    foo
+    bar
+  </span>
+</div>`
+
+describe("HtmlElement.parent", () => {
+  test("returns parent element", () => {
+    const doc = parseDocument(sampleHtml)
+    const p = doc.selectFirst("p.intro")
+    const parent = p?.parent()
+    expect(parent?.attr("id")).toBe("main")
+  })
+
+  test("returns null for root element", () => {
+    const doc = parseDocument(sampleHtml)
+    const html = doc.selectFirst("html")
+    // html's parent is the document root (non-element) → null
+    expect(html?.parent()).toBeNull()
+  })
+})
+
+describe("HtmlElement.nextSibling / prevSibling", () => {
+  test("nextSibling returns the next element sibling", () => {
+    const doc = parseDocument(sampleHtml)
+    const first = doc.selectFirst("p.intro")
+    const next = first?.nextSibling()
+    expect(next?.attr("class")).toBe("content")
+  })
+
+  test("prevSibling returns the previous element sibling", () => {
+    const doc = parseDocument(sampleHtml)
+    const second = doc.selectFirst("p.content")
+    const prev = second?.prevSibling()
+    expect(prev?.attr("class")).toBe("intro")
+  })
+
+  test("nextSibling returns null for last sibling", () => {
+    const doc = parseDocument(sampleHtml)
+    const footer = doc.selectFirst("footer")
+    expect(footer?.nextSibling()).toBeNull()
+  })
+
+  test("prevSibling returns null for first sibling", () => {
+    const doc = parseDocument(sampleHtml)
+    const h1 = doc.selectFirst("h1")
+    expect(h1?.prevSibling()).toBeNull()
+  })
+})
+
+describe("HtmlElement.classes", () => {
+  test("returns all class names as an array", () => {
+    const doc = parseDocument(sampleHtml)
+    const div = doc.selectFirst("#main")
+    expect(div?.classes()).toEqual(["container", "primary"])
+  })
+
+  test("returns empty array for element with no class", () => {
+    const doc = parseDocument(sampleHtml)
+    const h1 = doc.selectFirst("h1")
+    expect(h1?.classes()).toEqual([])
+  })
+
+  test("returns single class", () => {
+    const doc = parseDocument(sampleHtml)
+    const p = doc.selectFirst("p.intro")
+    expect(p?.classes()).toEqual(["intro"])
+  })
+})
+
+describe("HtmlElement.textTrimmed", () => {
+  test("collapses whitespace and trims", () => {
+    const doc = parseDocument(whitespaceHtml)
+    const p = doc.selectFirst("p")
+    expect(p?.textTrimmed()).toBe("Hello World")
+  })
+
+  test("normalizes multi-line text", () => {
+    const doc = parseDocument(whitespaceHtml)
+    const span = doc.selectFirst("span")
+    expect(span?.textTrimmed()).toBe("foo bar")
+  })
+
+  test("concatenates descendant text with single spaces", () => {
+    const doc = parseDocument(whitespaceHtml)
+    const div = doc.selectFirst("div")
+    expect(div?.textTrimmed()).toBe("Hello World foo bar")
+  })
+})
+
+describe("HtmlElement.closest", () => {
+  test("returns self when it matches the selector", () => {
+    const doc = parseDocument(sampleHtml)
+    const p = doc.selectFirst("p.intro")
+    expect(p?.closest("p")?.attr("class")).toBe("intro")
+  })
+
+  test("returns ancestor matching the selector", () => {
+    const doc = parseDocument(sampleHtml)
+    const a = doc.selectFirst("a")
+    expect(a?.closest("#main")?.attr("id")).toBe("main")
+  })
+
+  test("returns null when no ancestor matches", () => {
+    const doc = parseDocument(sampleHtml)
+    const p = doc.selectFirst("p.intro")
+    expect(p?.closest("section")).toBeNull()
+  })
+
+  test("stops at the first matching ancestor", () => {
+    const doc = parseDocument(sampleHtml)
+    const a = doc.selectFirst("a")
+    // <a> → <li> → <ul> → <div#main> → ...
+    expect(a?.closest("li")?.tagName()).toBe("li")
+  })
+
+  test("throws on invalid selector", () => {
+    const doc = parseDocument(sampleHtml)
+    const p = doc.selectFirst("p")
+    expect(() => p?.closest("###bad")).toThrow()
+  })
+})
+
 describe("HtmlElement.children", () => {
   test("returns only element children (not text nodes)", () => {
     const doc = parseDocument(sampleHtml)

@@ -177,4 +177,87 @@ impl HtmlElement {
       .collect();
     Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
+
+  // --- 1. DOM traversal ---
+
+  #[napi]
+  pub fn parent(&self) -> napi::Result<Option<HtmlElement>> {
+    Ok(
+      self
+        .element_ref()?
+        .parent()
+        .and_then(ElementRef::wrap)
+        .map(|e| HtmlElement::new(Rc::clone(&self.html), e.id())),
+    )
+  }
+
+  #[napi]
+  pub fn next_sibling(&self) -> napi::Result<Option<HtmlElement>> {
+    let mut cur = self.element_ref()?.next_sibling();
+    while let Some(node) = cur {
+      let following = node.next_sibling();
+      if let Some(e) = ElementRef::wrap(node) {
+        return Ok(Some(HtmlElement::new(Rc::clone(&self.html), e.id())));
+      }
+      cur = following;
+    }
+    Ok(None)
+  }
+
+  #[napi]
+  pub fn prev_sibling(&self) -> napi::Result<Option<HtmlElement>> {
+    let mut cur = self.element_ref()?.prev_sibling();
+    while let Some(node) = cur {
+      let preceding = node.prev_sibling();
+      if let Some(e) = ElementRef::wrap(node) {
+        return Ok(Some(HtmlElement::new(Rc::clone(&self.html), e.id())));
+      }
+      cur = preceding;
+    }
+    Ok(None)
+  }
+
+  // --- 2. classes() ---
+
+  #[napi]
+  pub fn classes(&self) -> napi::Result<Vec<String>> {
+    Ok(
+      self
+        .element_ref()?
+        .value()
+        .classes()
+        .map(|c| c.to_string())
+        .collect(),
+    )
+  }
+
+  // --- 3. textTrimmed() ---
+
+  #[napi]
+  pub fn text_trimmed(&self) -> napi::Result<String> {
+    let raw = self.element_ref()?.text().collect::<String>();
+    Ok(raw.split_whitespace().collect::<Vec<_>>().join(" "))
+  }
+
+  // --- 4. closest(selector) ---
+
+  #[napi]
+  pub fn closest(&self, selector: String) -> napi::Result<Option<HtmlElement>> {
+    let sel = get_selector(&selector)?;
+    let elem = self.element_ref()?;
+
+    if sel.matches(&elem) {
+      return Ok(Some(HtmlElement::new(Rc::clone(&self.html), self.node_id)));
+    }
+
+    let mut cur = elem.parent().and_then(ElementRef::wrap);
+    while let Some(e) = cur {
+      if sel.matches(&e) {
+        return Ok(Some(HtmlElement::new(Rc::clone(&self.html), e.id())));
+      }
+      cur = e.parent().and_then(ElementRef::wrap);
+    }
+
+    Ok(None)
+  }
 }
