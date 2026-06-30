@@ -30,6 +30,7 @@ fn get_selector(selector: &str) -> napi::Result<Arc<Selector>> {
   })
 }
 
+/// Parses a full HTML document following the HTML5 parsing algorithm.
 #[napi]
 pub fn parse_document(html: String) -> HtmlDocument {
   HtmlDocument {
@@ -37,6 +38,7 @@ pub fn parse_document(html: String) -> HtmlDocument {
   }
 }
 
+/// Parses an HTML fragment (e.g. a snippet without `<html>`/`<body>` wrappers).
 #[napi]
 pub fn parse_fragment(html: String) -> HtmlDocument {
   HtmlDocument {
@@ -44,6 +46,7 @@ pub fn parse_fragment(html: String) -> HtmlDocument {
   }
 }
 
+/// A parsed HTML document or fragment.
 #[napi]
 pub struct HtmlDocument {
   html: Rc<Html>,
@@ -51,6 +54,7 @@ pub struct HtmlDocument {
 
 #[napi]
 impl HtmlDocument {
+  /// Returns all elements matching the given CSS selector.
   #[napi]
   pub fn select(&self, selector: String) -> napi::Result<NativeNodeList> {
     let sel = get_selector(&selector)?;
@@ -58,6 +62,7 @@ impl HtmlDocument {
     Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
 
+  /// Returns the first element matching the given CSS selector, or `null` if none match.
   #[napi]
   pub fn select_first(&self, selector: String) -> napi::Result<Option<HtmlElement>> {
     let sel = get_selector(&selector)?;
@@ -67,18 +72,21 @@ impl HtmlDocument {
     }))
   }
 
+  /// Returns the document's root element.
   #[napi]
   pub fn root_element(&self) -> HtmlElement {
     let e = self.html.root_element();
     HtmlElement::new(Rc::clone(&self.html), e.id())
   }
 
+  /// Serializes the whole document back to an HTML string.
   #[napi]
   pub fn html(&self) -> String {
     self.html.html()
   }
 }
 
+/// A single element node within a parsed `HtmlDocument`.
 #[napi]
 pub struct HtmlElement {
   html: Rc<Html>,
@@ -102,26 +110,31 @@ impl HtmlElement {
 
 #[napi]
 impl HtmlElement {
+  /// The tag name in lowercase (e.g. `"div"`).
   #[napi]
   pub fn tag_name(&self) -> napi::Result<String> {
     Ok(self.element_ref()?.value().name().to_string())
   }
 
+  /// The concatenated text content of this element and all its descendants.
   #[napi]
   pub fn text(&self) -> napi::Result<String> {
     Ok(self.element_ref()?.text().collect::<String>())
   }
 
+  /// The HTML markup of this element's children, excluding the element's own tag.
   #[napi]
   pub fn inner_html(&self) -> napi::Result<String> {
     Ok(self.element_ref()?.inner_html())
   }
 
+  /// The HTML markup of this element, including its own tag.
   #[napi]
   pub fn outer_html(&self) -> napi::Result<String> {
     Ok(self.element_ref()?.html())
   }
 
+  /// The value of the named attribute, or `null` if the attribute is absent.
   #[napi]
   pub fn attr(&self, name: String) -> napi::Result<Option<String>> {
     Ok(
@@ -133,6 +146,7 @@ impl HtmlElement {
     )
   }
 
+  /// All attributes of this element as a key-value object.
   #[napi]
   pub fn attrs(&self) -> napi::Result<HashMap<String, String>> {
     Ok(
@@ -145,6 +159,7 @@ impl HtmlElement {
     )
   }
 
+  /// Whether this element has the given class.
   #[napi]
   pub fn has_class(&self, class_name: String) -> napi::Result<bool> {
     Ok(
@@ -156,6 +171,7 @@ impl HtmlElement {
     )
   }
 
+  /// Returns all descendants matching the given CSS selector.
   #[napi]
   pub fn select(&self, selector: String) -> napi::Result<NativeNodeList> {
     let sel = get_selector(&selector)?;
@@ -163,6 +179,7 @@ impl HtmlElement {
     Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
 
+  /// Returns the first descendant matching the given CSS selector, or `null` if none match.
   #[napi]
   pub fn select_first(&self, selector: String) -> napi::Result<Option<HtmlElement>> {
     let sel = get_selector(&selector)?;
@@ -178,6 +195,7 @@ impl HtmlElement {
     )
   }
 
+  /// The direct element children of this element (text nodes are excluded).
   #[napi]
   pub fn children(&self) -> napi::Result<NativeNodeList> {
     let node_ids = self
@@ -191,6 +209,7 @@ impl HtmlElement {
 
   // --- 1. DOM traversal ---
 
+  /// The parent element, or `null` if this element has no parent (e.g. the root).
   #[napi]
   pub fn parent(&self) -> napi::Result<Option<HtmlElement>> {
     Ok(
@@ -202,6 +221,7 @@ impl HtmlElement {
     )
   }
 
+  /// The next sibling that is an element, skipping over text/comment nodes.
   #[napi]
   pub fn next_sibling(&self) -> napi::Result<Option<HtmlElement>> {
     let mut cur = self.element_ref()?.next_sibling();
@@ -215,6 +235,7 @@ impl HtmlElement {
     Ok(None)
   }
 
+  /// The previous sibling that is an element, skipping over text/comment nodes.
   #[napi]
   pub fn prev_sibling(&self) -> napi::Result<Option<HtmlElement>> {
     let mut cur = self.element_ref()?.prev_sibling();
@@ -230,6 +251,7 @@ impl HtmlElement {
 
   // --- 2. classes() ---
 
+  /// All class names on this element.
   #[napi]
   pub fn classes(&self) -> napi::Result<Vec<String>> {
     Ok(
@@ -244,6 +266,8 @@ impl HtmlElement {
 
   // --- 3. textTrimmed() ---
 
+  /// Like `text()`, but collapses consecutive whitespace into a single space
+  /// and trims leading/trailing whitespace.
   #[napi]
   pub fn text_trimmed(&self) -> napi::Result<String> {
     let raw = self.element_ref()?.text().collect::<String>();
@@ -252,6 +276,7 @@ impl HtmlElement {
 
   // --- 5. id() ---
 
+  /// The value of this element's `id` attribute, or `null` if it has none.
   #[napi]
   pub fn id(&self) -> napi::Result<Option<String>> {
     Ok(self.element_ref()?.value().id().map(|s| s.to_string()))
@@ -259,6 +284,7 @@ impl HtmlElement {
 
   // --- 6. matches(selector) ---
 
+  /// Whether this element matches the given CSS selector.
   #[napi]
   pub fn matches(&self, selector: String) -> napi::Result<bool> {
     let sel = get_selector(&selector)?;
@@ -268,6 +294,7 @@ impl HtmlElement {
 
   // --- 7. firstChild() / lastChild() ---
 
+  /// The first child that is an element, skipping over text/comment nodes.
   #[napi]
   pub fn first_child(&self) -> napi::Result<Option<HtmlElement>> {
     let mut cur = self.element_ref()?.first_child();
@@ -281,6 +308,7 @@ impl HtmlElement {
     Ok(None)
   }
 
+  /// The last child that is an element, skipping over text/comment nodes.
   #[napi]
   pub fn last_child(&self) -> napi::Result<Option<HtmlElement>> {
     let mut cur = self.element_ref()?.last_child();
@@ -296,6 +324,7 @@ impl HtmlElement {
 
   // --- 8. ancestors() ---
 
+  /// All ancestor elements, from the immediate parent up to the root.
   #[napi]
   pub fn ancestors(&self) -> napi::Result<NativeNodeList> {
     let node_ids = self
@@ -309,6 +338,7 @@ impl HtmlElement {
 
   // --- 9. descendants() ---
 
+  /// All descendant elements, in document order, excluding this element itself.
   #[napi]
   pub fn descendants(&self) -> napi::Result<NativeNodeList> {
     let node_ids = self
@@ -322,6 +352,8 @@ impl HtmlElement {
 
   // --- 4. closest(selector) ---
 
+  /// Walks up from this element (inclusive) to find the closest ancestor matching
+  /// the given CSS selector, or `null` if none match.
   #[napi]
   pub fn closest(&self, selector: String) -> napi::Result<Option<HtmlElement>> {
     let sel = get_selector(&selector)?;

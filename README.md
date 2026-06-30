@@ -50,40 +50,6 @@ console.log(p?.innerHtml())  // "Hello <strong>world</strong>"
 console.log(p?.outerHtml())  // '<p class="note">Hello <strong>world</strong></p>'
 ```
 
-## API
-
-### `parseDocument(html: string): HtmlDocument`
-
-Parses a full HTML document. The parser follows the HTML5 specification.
-
-### `parseFragment(html: string): HtmlDocument`
-
-Parses an HTML fragment.
-
-### `HtmlDocument`
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `select(selector)` | `HtmlElement[]` | Returns all elements matching the CSS selector |
-| `selectFirst(selector)` | `HtmlElement \| null` | Returns the first matching element, or `null` |
-
-### `HtmlElement`
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `tagName()` | `string` | Tag name in lowercase (e.g. `"div"`) |
-| `text()` | `string` | Concatenated text content of the element and its descendants |
-| `innerHtml()` | `string` | Inner HTML of the element |
-| `outerHtml()` | `string` | Outer HTML including the element's own tag |
-| `attr(name)` | `string \| null` | Value of the named attribute, or `null` if absent |
-| `attrs()` | `Record<string, string>` | All attributes as a key-value object |
-| `hasClass(className)` | `boolean` | Whether the element has the given class |
-| `select(selector)` | `HtmlElement[]` | Selects descendants matching the CSS selector |
-| `selectFirst(selector)` | `HtmlElement \| null` | Selects the first matching descendant |
-| `children()` | `HtmlElement[]` | Direct element children (text nodes excluded) |
-
-Both `select` and `selectFirst` throw if the selector is invalid.
-
 ## WebAssembly support
 
 ### Browser
