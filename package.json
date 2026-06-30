@@ -64,7 +64,7 @@
     "format:toml": "taplo format",
     "format:rs": "cargo fmt",
     "lint": "biome check",
-    "prepublishOnly": "napi prepublish -t npm",
+    "prepublishOnly": "napi prepublish -t npm --gh-release false",
     "test": "vitest run",
     "preversion": "napi build --esm --platform && git add .",
     "version": "napi version",
