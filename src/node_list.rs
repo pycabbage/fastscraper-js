@@ -50,8 +50,9 @@ impl NativeNodeList {
 
   #[napi]
   pub fn item(&self, index: u32) -> Option<HtmlElement> {
-    self.node_ids.get(index as usize).map(|&node_id| {
-      HtmlElement::new(Rc::clone(&self.html), node_id)
-    })
+    self
+      .node_ids
+      .get(index as usize)
+      .map(|&node_id| HtmlElement::new(Rc::clone(&self.html), node_id))
   }
 }

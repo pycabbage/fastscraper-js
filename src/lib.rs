@@ -18,17 +18,16 @@ thread_local! {
 }
 
 fn get_selector(selector: &str) -> napi::Result<Arc<Selector>> {
-    SELECTOR_CACHE.with(|cache| {
-        let mut cache = cache.borrow_mut();
-        if let Some(sel) = cache.get(selector) {
-            return Ok(Arc::clone(sel));
-        }
-        let sel = Selector::parse(selector)
-            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-        let sel = Arc::new(sel);
-        cache.insert(selector.to_string(), Arc::clone(&sel));
-        Ok(sel)
-    })
+  SELECTOR_CACHE.with(|cache| {
+    let mut cache = cache.borrow_mut();
+    if let Some(sel) = cache.get(selector) {
+      return Ok(Arc::clone(sel));
+    }
+    let sel = Selector::parse(selector).map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    let sel = Arc::new(sel);
+    cache.insert(selector.to_string(), Arc::clone(&sel));
+    Ok(sel)
+  })
 }
 
 #[napi]
@@ -55,18 +54,14 @@ impl HtmlDocument {
   #[napi]
   pub fn select(&self, selector: String) -> napi::Result<NativeNodeList> {
     let sel = get_selector(&selector)?;
-    let node_ids = self
-      .html
-      .select(&*sel)
-      .map(|e| e.id())
-      .collect();
+    let node_ids = self.html.select(&sel).map(|e| e.id()).collect();
     Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
 
   #[napi]
   pub fn select_first(&self, selector: String) -> napi::Result<Option<HtmlElement>> {
     let sel = get_selector(&selector)?;
-    Ok(self.html.select(&*sel).next().map(|e| HtmlElement {
+    Ok(self.html.select(&sel).next().map(|e| HtmlElement {
       html: Rc::clone(&self.html),
       node_id: e.id(),
     }))
@@ -118,7 +113,13 @@ impl HtmlElement {
 
   #[napi]
   pub fn attr(&self, name: String) -> napi::Result<Option<String>> {
-    Ok(self.element_ref()?.value().attr(&name).map(|s| s.to_string()))
+    Ok(
+      self
+        .element_ref()?
+        .value()
+        .attr(&name)
+        .map(|s| s.to_string()),
+    )
   }
 
   #[napi]
@@ -147,11 +148,7 @@ impl HtmlElement {
   #[napi]
   pub fn select(&self, selector: String) -> napi::Result<NativeNodeList> {
     let sel = get_selector(&selector)?;
-    let node_ids = self
-      .element_ref()?
-      .select(&*sel)
-      .map(|e| e.id())
-      .collect();
+    let node_ids = self.element_ref()?.select(&sel).map(|e| e.id()).collect();
     Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
 
@@ -161,7 +158,7 @@ impl HtmlElement {
     Ok(
       self
         .element_ref()?
-        .select(&*sel)
+        .select(&sel)
         .next()
         .map(|e| HtmlElement {
           html: Rc::clone(&self.html),
@@ -172,7 +169,8 @@ impl HtmlElement {
 
   #[napi]
   pub fn children(&self) -> napi::Result<NativeNodeList> {
-    let node_ids = self.element_ref()?
+    let node_ids = self
+      .element_ref()?
       .children()
       .filter_map(ElementRef::wrap)
       .map(|e| e.id())
