@@ -362,3 +362,133 @@ describe("HtmlElement.children", () => {
     expect(children).toHaveLength(0)
   })
 })
+
+describe("HtmlDocument.rootElement", () => {
+  test("returns the <html> element", () => {
+    const doc = parseDocument(sampleHtml)
+    expect(doc.rootElement().tagName()).toBe("html")
+  })
+})
+
+describe("HtmlDocument.html", () => {
+  test("serializes the document back to HTML", () => {
+    const doc = parseDocument("<p>hello</p>")
+    const out = doc.html()
+    expect(out).toContain("<p>hello</p>")
+  })
+
+  test("round-trips through parse → html", () => {
+    const doc = parseDocument(sampleHtml)
+    const out = doc.html()
+    expect(out).toContain("Hello World")
+    expect(out).toContain("https://example.com")
+  })
+})
+
+describe("HtmlElement.id", () => {
+  test("returns the id attribute value", () => {
+    const doc = parseDocument(sampleHtml)
+    const div = doc.selectFirst("#main")
+    expect(div?.id()).toBe("main")
+  })
+
+  test("returns null for element without id", () => {
+    const doc = parseDocument(sampleHtml)
+    const p = doc.selectFirst("p.intro")
+    expect(p?.id()).toBeNull()
+  })
+})
+
+describe("HtmlElement.matches", () => {
+  test("returns true when element matches selector", () => {
+    const doc = parseDocument(sampleHtml)
+    const div = doc.selectFirst("#main")
+    expect(div?.matches("#main")).toBe(true)
+    expect(div?.matches(".container")).toBe(true)
+    expect(div?.matches("div")).toBe(true)
+  })
+
+  test("returns false when element does not match", () => {
+    const doc = parseDocument(sampleHtml)
+    const div = doc.selectFirst("#main")
+    expect(div?.matches("p")).toBe(false)
+    expect(div?.matches(".missing")).toBe(false)
+  })
+
+  test("throws on invalid selector", () => {
+    const doc = parseDocument(sampleHtml)
+    const div = doc.selectFirst("#main")
+    expect(() => div?.matches("###bad")).toThrow()
+  })
+})
+
+describe("HtmlElement.firstChild / lastChild", () => {
+  test("firstChild returns the first element child", () => {
+    const doc = parseDocument(sampleHtml)
+    const div = doc.selectFirst("#main")
+    expect(div?.firstChild()?.tagName()).toBe("h1")
+  })
+
+  test("lastChild returns the last element child", () => {
+    const doc = parseDocument(sampleHtml)
+    const div = doc.selectFirst("#main")
+    expect(div?.lastChild()?.tagName()).toBe("ul")
+  })
+
+  test("firstChild returns null for leaf element", () => {
+    const doc = parseDocument(sampleHtml)
+    const h1 = doc.selectFirst("h1")
+    expect(h1?.firstChild()).toBeNull()
+  })
+
+  test("lastChild returns null for leaf element", () => {
+    const doc = parseDocument(sampleHtml)
+    const h1 = doc.selectFirst("h1")
+    expect(h1?.lastChild()).toBeNull()
+  })
+})
+
+describe("HtmlElement.ancestors", () => {
+  test("returns ancestors from nearest to farthest", () => {
+    const doc = parseDocument(sampleHtml)
+    const a = doc.selectFirst("a")
+    const tags = [...(a?.ancestors() ?? [])].map((e) => e.tagName())
+    // <a> is inside <li> → <ul> → <div#main> → <body> → <html>
+    expect(tags[0]).toBe("li")
+    expect(tags).toContain("ul")
+    expect(tags).toContain("body")
+    expect(tags[tags.length - 1]).toBe("html")
+  })
+
+  test("returns empty list for root element", () => {
+    const doc = parseDocument(sampleHtml)
+    const html = doc.selectFirst("html")
+    expect(html?.ancestors()).toHaveLength(0)
+  })
+})
+
+describe("HtmlElement.descendants", () => {
+  test("returns all descendant elements", () => {
+    const doc = parseDocument(sampleHtml)
+    const ul = doc.selectFirst("ul")
+    const tags = [...(ul?.descendants() ?? [])].map((e) => e.tagName())
+    // <ul> contains <li>, <li>, <a>, <a>
+    expect(tags).toContain("li")
+    expect(tags).toContain("a")
+    expect(tags).toHaveLength(4)
+  })
+
+  test("returns empty list for leaf element", () => {
+    const doc = parseDocument(sampleHtml)
+    const h1 = doc.selectFirst("h1")
+    expect(h1?.descendants()).toHaveLength(0)
+  })
+
+  test("order is depth-first", () => {
+    const doc = parseDocument(sampleHtml)
+    const ul = doc.selectFirst("ul")
+    const tags = [...(ul?.descendants() ?? [])].map((e) => e.tagName())
+    // depth-first: li, a, li, a
+    expect(tags).toEqual(["li", "a", "li", "a"])
+  })
+})

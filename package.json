@@ -1,6 +1,6 @@
 {
   "name": "fastscraper-js",
-  "version": "0.0.1-alpha.6",
+  "version": "0.0.1",
   "description": "Fast HTML parser with CSS selector API, powered by Rust",
   "main": "index.js",
   "types": "index.d.ts",

@@ -66,6 +66,17 @@ impl HtmlDocument {
       node_id: e.id(),
     }))
   }
+
+  #[napi]
+  pub fn root_element(&self) -> HtmlElement {
+    let e = self.html.root_element();
+    HtmlElement::new(Rc::clone(&self.html), e.id())
+  }
+
+  #[napi]
+  pub fn html(&self) -> String {
+    self.html.html()
+  }
 }
 
 #[napi]
@@ -237,6 +248,76 @@ impl HtmlElement {
   pub fn text_trimmed(&self) -> napi::Result<String> {
     let raw = self.element_ref()?.text().collect::<String>();
     Ok(raw.split_whitespace().collect::<Vec<_>>().join(" "))
+  }
+
+  // --- 5. id() ---
+
+  #[napi]
+  pub fn id(&self) -> napi::Result<Option<String>> {
+    Ok(self.element_ref()?.value().id().map(|s| s.to_string()))
+  }
+
+  // --- 6. matches(selector) ---
+
+  #[napi]
+  pub fn matches(&self, selector: String) -> napi::Result<bool> {
+    let sel = get_selector(&selector)?;
+    let elem = self.element_ref()?;
+    Ok(sel.matches(&elem))
+  }
+
+  // --- 7. firstChild() / lastChild() ---
+
+  #[napi]
+  pub fn first_child(&self) -> napi::Result<Option<HtmlElement>> {
+    let mut cur = self.element_ref()?.first_child();
+    while let Some(node) = cur {
+      let next = node.next_sibling();
+      if let Some(e) = ElementRef::wrap(node) {
+        return Ok(Some(HtmlElement::new(Rc::clone(&self.html), e.id())));
+      }
+      cur = next;
+    }
+    Ok(None)
+  }
+
+  #[napi]
+  pub fn last_child(&self) -> napi::Result<Option<HtmlElement>> {
+    let mut cur = self.element_ref()?.last_child();
+    while let Some(node) = cur {
+      let prev = node.prev_sibling();
+      if let Some(e) = ElementRef::wrap(node) {
+        return Ok(Some(HtmlElement::new(Rc::clone(&self.html), e.id())));
+      }
+      cur = prev;
+    }
+    Ok(None)
+  }
+
+  // --- 8. ancestors() ---
+
+  #[napi]
+  pub fn ancestors(&self) -> napi::Result<NativeNodeList> {
+    let node_ids = self
+      .element_ref()?
+      .ancestors()
+      .filter_map(ElementRef::wrap)
+      .map(|e| e.id())
+      .collect();
+    Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
+  }
+
+  // --- 9. descendants() ---
+
+  #[napi]
+  pub fn descendants(&self) -> napi::Result<NativeNodeList> {
+    let node_ids = self
+      .element_ref()?
+      .descendent_elements()
+      .skip(1) // descendent_elements() includes self as first item
+      .map(|e| e.id())
+      .collect();
+    Ok(NativeNodeList::new(Rc::clone(&self.html), node_ids))
   }
 
   // --- 4. closest(selector) ---
